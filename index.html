@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#d32f2f">
+    <title>Feuerwehr Ellerau Bestell-App</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 15px; background: #f9f9f9; }
+        h1 { text-align: center; color: #d32f2f; margin-bottom: 10px; }
+        .tabs { text-align: center; margin: 20px 0; }
+        .tabs button { padding: 12px 20px; font-size: 18px; margin: 5px; }
+
+        .section { max-width: 90%; margin: 0 auto; }
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            font-size: 18px;
+        }
+        .item-name { flex: 1; }
+        .controls button {
+            width: 44px; height: 44px; font-size: 24px; margin: 0 8px;
+            border: none; border-radius: 50%; background: #d32f2f; color: white;
+        }
+        .controls button.minus { background: #555; }
+        .qty { min-width: 50px; text-align: center; font-weight: bold; font-size: 22px; }
+
+        #result {
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            border: 3px solid #d32f2f;
+            border-radius: 12px;
+            font-size: 22px;
+            text-align: center;
+            max-width: 90%;
+        }
+        .reset-btn {
+            display: block; margin: 20px auto; padding: 14px 30px;
+            font-size: 18px; background: #333; color: white; border: none; border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Feuerwehr Ellerau Bestell-App</h1>
+
+    <div class="tabs">
+        <button onclick="showSection('grill')" class="active">Grill</button>
+        <button onclick="showSection('tresen')">Tresen</button>
+    </div>
+
+    <!-- ==================== GRILL ==================== -->
+    <div id="grill" class="section">
+        <div class="item">
+            <div class="item-name">Bratwurst <small>(3,00 €)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('bratwurst', -1)">–</button>
+                <span class="qty" id="qty-bratwurst">0</span>
+                <button onclick="changeQty('bratwurst', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="item">
+            <div class="item-name">Nackensteak <small>(4,00 €)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('nacken', -1)">–</button>
+                <span class="qty" id="qty-nacken">0</span>
+                <button onclick="changeQty('nacken', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="item">
+            <div class="item-name">Pommes <small>(2,50 €)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('pommes', -1)">–</button>
+                <span class="qty" id="qty-pommes">0</span>
+                <button onclick="changeQty('pommes', 1)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TRESEN ==================== -->
+    <div id="tresen" class="section" style="display:none;">
+        <div class="item">
+            <div class="item-name">Bier 0,3l <small>(3,00 € + 1,00 € Pfand)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('bier', -1)">–</button>
+                <span class="qty" id="qty-bier">0</span>
+                <button onclick="changeQty('bier', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="item">
+            <div class="item-name">Sekt 0,2l <small>(4,00 € + 1,00 € Pfand)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('sekt', -1)">–</button>
+                <span class="qty" id="qty-sekt">0</span>
+                <button onclick="changeQty('sekt', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="item">
+            <div class="item-name">Cola / Fanta <small>(2,50 € + 1,00 € Pfand)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('cola', -1)">–</button>
+                <span class="qty" id="qty-cola">0</span>
+                <button onclick="changeQty('cola', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="item">
+            <div class="item-name">Wasser <small>(2,00 € + 1,00 € Pfand)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('wasser', -1)">–</button>
+                <span class="qty" id="qty-wasser">0</span>
+                <button onclick="changeQty('wasser', 1)">+</button>
+            </div>
+        </div>
+
+        <div class="item">
+            <div class="item-name">Pfand-Glas <small>(-1,00 €)</small></div>
+            <div class="controls">
+                <button class="minus" onclick="changeQty('extra', -1)">–</button>
+                <span class="qty" id="qty-extra">0</span>
+                <button onclick="changeQty('extra', 1)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetOrder()">Bestellung zurücksetzen</button>
+
+    <div id="result">Gesamt: 0,00 €</div>
+
+    <script>
+        // Preise und Pfand
+        const items = {
+            bratwurst: { price: 3.00, pfand: 0 },
+            nacken:    { price: 4.00, pfand: 0 },
+            pommes:    { price: 2.50, pfand: 0 },
+            bier:      { price: 3.00, pfand: 1.00 },
+            sekt:      { price: 4.00, pfand: 1.00 },
+            cola:      { price: 2.50, pfand: 1.00 },
+            wasser:    { price: 2.00, pfand: 1.00 },
+            extra:     { price: -1.00, pfand: 0 }  // extra Pfand
+        };
+
+        let qty = {};                              // aktuelle Mengen
+        Object.keys(items).forEach(k => qty[k] = 0);
+
+        let activeSection = 'grill';
+
+        function showSection(sec) {
+            document.getElementById('grill').style.display = 'none';
+            document.getElementById('tresen').style.display = 'none';
+            document.getElementById(sec).style.display = 'block';
+            activeSection = sec;
+            updateTotal();
+        }
+
+        function changeQty(item, delta) {
+            qty[item] = Math.max(0, qty[item] + delta);   // nie unter 0
+            document.getElementById('qty-' + item).textContent = qty[item];
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let total = 0;
+            let pfand = 0;
+            let list = '';
+
+            Object.keys(items).forEach(item => {
+                if (qty[item] > 0) {
+                    total += qty[item] * items[item].price;
+                    pfand += qty[item] * items[item].pfand;
+
+                    // Schöner Name für die Anzeige
+                    const names = {
+                        bratwurst: "Bratwurst", nacken: "Nackensteak", pommes: "Pommes",
+                        bier: "Bier 0,5l", sekt: "Sekt 0,2l", cola: "Cola/Fanta", wasser: "Wasser", extra: "Pfand-Glas"
+                    };
+                    list += `${qty[item]} × ${names[item]}<br>`;
+                }
+            });
+
+            const grandTotal = total + pfand;
+            const pfandText = activeSection === 'tresen' ? ` (davon Pfand ${pfand.toFixed(2)} €)` : '';
+
+            document.getElementById('result').innerHTML =
+                list ? `Bestellung:<br>${list}<br><strong>Gesamt: ${grandTotal.toFixed(2)} €</strong>${pfandText}`
+                     : `Gesamt: 0,00 €`;
+        }
+
+        function resetOrder() {
+            Object.keys(qty).forEach(k => {
+                qty[k] = 0;
+                document.getElementById('qty-' + k).textContent = '0';
+            });
+            updateTotal();
+        }
+
+        // Start
+        showSection('grill');
+    </script>
+
+    <!-- Service Worker (PWA) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .catch(err => console.log('SW Fehler:', err));
+            });
+        }
+    </script>
+</body>
+</html>
